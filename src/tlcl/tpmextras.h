@@ -25,5 +25,6 @@ typedef struct tdTPM_WRITE_INFO {
                             | TPM_LOC_THREE | TPM_LOC_FOUR)  /* 0x1f */
 
 #define TPM_ENCAUTH_SIZE 20
+#define TPM_PUBEK_SIZE 256
 
 #endif

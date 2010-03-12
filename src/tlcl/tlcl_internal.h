@@ -6,7 +6,6 @@
 #ifndef TPM_LITE_TLCL_INTERNAL_H_
 #define TPM_LITE_TLCL_INTERNAL_H_
 
-#include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -14,43 +13,6 @@
 typedef int bool;
 const bool true = 1;
 const bool false = 0;
-
-#define POSSIBLY_UNUSED __attribute__((unused))
-
-#ifdef __STRICT_ANSI__
-#define INLINE
-#else
-#define INLINE inline
-#endif
-
-/*
- * Output an error message and quit the program.
- */
-static void error(const char *format, ...) {
-  va_list ap;
-  va_start(ap, format);
-  fprintf(stderr, "ERROR: ");
-  vfprintf(stderr, format, ap);
-  va_end(ap);
-  exit(1);
-}
-
-/*
- * Output a warning and continue.
- */
-POSSIBLY_UNUSED
-static void warning(const char *format, ...) {
-  va_list ap;
-  va_start(ap, format);
-  fprintf(stderr, "WARNING: ");
-  vfprintf(stderr, format, ap);
-  va_end(ap);
-  exit(1);
-}
-
-#define assert(expr) do { if (!(expr)) { \
-      error("assert fail: %s at %s:%d\n", \
-            #expr, __FILE__, __LINE__); }} while(0)
 
 /*
  * Conversion functions.  ToTpmTYPE puts a value of type TYPE into a TPM

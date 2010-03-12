@@ -35,20 +35,23 @@
  */
 void InitializeSpaces(void) {
   uint32_t zero = 0;
+  uint32_t perm = TPM_NV_PER_WRITE_STCLEAR;
 
+  printf("Initializing spaces\n");
   TlclSetNvLocked();  /* useful only the first time */
 
-  TlclDefineSpace(INDEX0, TPM_NV_PER_WRITE_STCLEAR, 4);
+  TlclDefineSpace(INDEX0, perm, 4);
   TlclWrite(INDEX0, (uint8_t *) &zero, 4);
-  TlclDefineSpace(INDEX1, TPM_NV_PER_WRITE_STCLEAR, 4);
+  TlclDefineSpace(INDEX1, perm, 4);
   TlclWrite(INDEX1, (uint8_t *) &zero, 4);
-  TlclDefineSpace(INDEX2, TPM_NV_PER_WRITE_STCLEAR, 4);
+  TlclDefineSpace(INDEX2, perm, 4);
   TlclWrite(INDEX2, (uint8_t *) &zero, 4);
-  TlclDefineSpace(INDEX3, TPM_NV_PER_WRITE_STCLEAR, 4);
+  TlclDefineSpace(INDEX3, perm, 4);
   TlclWrite(INDEX3, (uint8_t *) &zero, 4);
 
-  TlclDefineSpace(INDEX_INITIALIZED, TPM_NV_PER_READ_STCLEAR, 1);
-  TlclReadLock(INDEX_INITIALIZED);
+  perm = TPM_NV_PER_READ_STCLEAR | TPM_NV_PER_WRITE_STCLEAR |
+    TPM_NV_PER_PPWRITE;
+  TlclDefineSpace(INDEX_INITIALIZED, perm, 1);
 }
 
 
@@ -71,9 +74,10 @@ int main(void) {
 
   TlclAssertPhysicalPresence();
 
-  /* Checks if initialization has completed.
+  /* Checks if initialization has completed by trying to read-lock a space
+   * that's created at the end of initialization.
    */
-  if (TlclRead(INDEX_INITIALIZED, &c, 1) != TPM_E_DISABLED_CMD) {
+  if (TlclRead(INDEX_INITIALIZED, &c, 0) == TPM_E_BADINDEX) {
     /* The initialization did not complete.
      */
     InitializeSpaces();
@@ -81,15 +85,27 @@ int main(void) {
 
   /* Checks if spaces are OK or messed up.
    */
-  if (TlclRead(INDEX0, (uint8_t *) &index_0, sizeof(index_0)) != TPM_SUCCESS ||
-      TlclRead(INDEX1, (uint8_t *) &index_1, sizeof(index_1)) != TPM_SUCCESS ||
-      TlclRead(INDEX2, (uint8_t *) &index_2, sizeof(index_2)) != TPM_SUCCESS ||
-      TlclRead(INDEX3, (uint8_t *) &index_3, sizeof(index_3)) != TPM_SUCCESS) {
+  if (TlclRead(INDEX0, (uint8_t*) &index_0, sizeof(index_0)) != TPM_SUCCESS ||
+      TlclRead(INDEX1, (uint8_t*) &index_1, sizeof(index_1)) != TPM_SUCCESS ||
+      TlclRead(INDEX2, (uint8_t*) &index_2, sizeof(index_2)) != TPM_SUCCESS ||
+      TlclRead(INDEX3, (uint8_t*) &index_3, sizeof(index_3)) != TPM_SUCCESS) {
     EnterRecoveryMode();
+  }
+
+  /* Writes space, and locks it.  Then attempts to write again.  I really wish
+   * I could use the imperative.
+   */
+  index_0 += 1;
+  if (TlclWrite(INDEX0, (uint8_t*) &index_0, sizeof(index_0) != TPM_SUCCESS)) {
+    error("could not write index 0\n");
+  }
+  TlclWriteLock(INDEX0);
+  if (TlclWrite(INDEX0, (uint8_t*) &index_0, sizeof(index_0)) == TPM_SUCCESS) {
+    error("index 0 is not locked\n");
   }
 
   /* Done for now.
    */
+  printf("Test completed successfully\n");
   exit(0);
 }
-  

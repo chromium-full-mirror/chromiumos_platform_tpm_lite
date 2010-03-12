@@ -14,13 +14,39 @@
 
 #include "tlcl.h"
 
+#include <errno.h>
+#include <fcntl.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <tss/tcs.h>
+#include <unistd.h>
 
 #include "structures.h"
 #include "tlcl_internal.h"
+#if USE_TPM_EMULATOR
 #include "tpmemu.h"
+#endif
 #include "tpmextras.h"
+
+/* The file descriptor for the TPM device.
+ */
+int tpm_fd = -1;
+
+/* Print |n| bytes from array |a|, with newlines.
+ */
+static void PrintBytes(uint8_t* a, int n) {
+  int i;
+  for (i = 0; i < n; i++) {
+    printf("%02x ", a[i]);
+    if ((i + 1) % 16 == 0) {
+      printf("\n");
+    }
+  }
+  if (i % 16 != 0) {
+    printf("\n");
+  }
+}
 
 /* Gets the tag field of a TPM command.
  */
@@ -33,14 +59,14 @@ static INLINE int TpmTag(uint8_t* buffer) {
 /* Sets the size field of a TPM command.
  */
 static INLINE void SetTpmCommandSize(uint8_t* buffer, uint32_t size) {
-  ToTpmUint32(buffer + 2, size);
+  ToTpmUint32(buffer + sizeof(uint16_t), size);
 }
 
 /* Gets the size field of a TPM command.
  */
 static INLINE int TpmCommandSize(const uint8_t* buffer) {
   uint32_t size;
-  FromTpmUint32(buffer + 2, &size);
+  FromTpmUint32(buffer + sizeof(uint16_t), &size);
   return (int) size;
 }
 
@@ -48,11 +74,11 @@ static INLINE int TpmCommandSize(const uint8_t* buffer) {
  */
 static INLINE int TpmCommandCode(const uint8_t* buffer) {
   uint32_t code;
-  FromTpmUint32(buffer + 6, &code);
+  FromTpmUint32(buffer + sizeof(uint16_t) + sizeof(uint32_t), &code);
   return code;
 }
 
-/* Gets the code field of a TPM result.
+/* Gets the return code field of a TPM result.
  */
 static INLINE int TpmReturnCode(const uint8_t* buffer) {
   return TpmCommandCode(buffer);
@@ -64,8 +90,38 @@ static void CheckResult(uint8_t* request, uint8_t* response, bool warn_only) {
   int command = TpmCommandCode(request);
   int result = TpmReturnCode(response);
   if (result != TPM_SUCCESS) {
-    (warn_only? warning : error)("command 0x%x failed: 0x%x\n",
-                                 command, result);
+    (warn_only? warning : error)("command %d 0x%x failed: %d 0x%x\n",
+                                 command, command, result, result);
+  }
+}
+
+/* Executes a command on the TPM.
+ */
+void TpmExecute(const uint8_t *in, const uint32_t in_len,
+                uint8_t *out, uint32_t *pout_len) {
+  uint8_t response[TPM_MAX_COMMAND_SIZE];
+  if (in_len <= 0) {
+    error("invalid command length %d\n", in_len);
+  } else if (tpm_fd < 0) {
+    error("the TPM device was not opened.  Forgot to call TlclLibinit?\n");
+  } else {
+    int n = write(tpm_fd, in, in_len);
+    if (n != in_len) {
+      error("write failure to TPM device: %s\n", strerror(errno));
+    }
+    n = read(tpm_fd, response, sizeof(response));
+    if (n == 0) {
+      error("null read from TPM device\n");
+    } else if (n < 0) {
+      error("read failure from TPM device: %s\n", strerror(errno));
+    } else {
+      if (n > *pout_len) {
+        error("TPM response too long for output buffer\n");
+      } else {
+        *pout_len = n;
+        memcpy(out, response, n);
+      }
+    }
   }
 }
 
@@ -75,7 +131,22 @@ static void SendReceive(uint8_t* request, uint8_t* response, int max_length) {
   uint32_t response_length = max_length;
   int tag, response_tag;
 
+#if USE_TPM_EMULATOR
   tpmemu_execute(request, TpmCommandSize(request), response, &response_length);
+#else
+  TpmExecute(request, TpmCommandSize(request), response, &response_length);
+#endif
+
+  {
+    int x = TpmCommandSize(request);
+    int y = response_length;
+    printf("request (%d bytes): ", x);
+    PrintBytes(request, 10);
+    PrintBytes(request + 10, x - 10);
+    printf("response (%d bytes): ", y);
+    PrintBytes(response, 10);
+    PrintBytes(response + 10, y - 10);
+  }
 
   /* sanity checks */
   tag = TpmTag(request);
@@ -105,7 +176,14 @@ static void Send(uint8_t* command) {
  */
 
 void TlclLibinit(void) {
+#if USE_TPM_EMULATOR
   tpmemu_init();
+#else
+  tpm_fd = open("/dev/tpm0", O_RDWR);
+  if (tpm_fd < 0) {
+    error("cannot open TPM device: %s\n", strerror(errno));
+  }
+#endif
 }
 
 void TlclStartup(void) {
@@ -162,11 +240,15 @@ uint32_t TlclRead(uint32_t index, uint8_t* data, uint32_t length) {
 }
 
 void TlclWriteLock(uint32_t index) {
-  (void) TlclWrite(index, NULL, 0);
+  if (TlclWrite(index, NULL, 0) != TPM_SUCCESS) {
+    error("failed to write lock space 0x%x\n", index);
+  }
 }
 
 void TlclReadLock(uint32_t index) {
-  (void) TlclRead(index, NULL, 0);
+  if (TlclRead(index, NULL, 0) != TPM_SUCCESS) {
+    error("failed to read lock space 0x%x\n", index);
+  }
 }
 
 void TlclAssertPhysicalPresence(void) {
@@ -175,4 +257,12 @@ void TlclAssertPhysicalPresence(void) {
 
 void TlclSetNvLocked(void) {
   TlclDefineSpace(TPM_NV_INDEX_LOCK, 0, 0);
+}
+
+int TlclIsOwned(void) {
+  uint8_t response[TPM_LARGE_ENOUGH_COMMAND_SIZE + TPM_PUBEK_SIZE];
+  uint32_t result;
+  SendReceive(tpm_readpubek_cmd.buffer, response, sizeof(response));
+  result = TpmReturnCode(response);
+  return (result != TPM_SUCCESS);
 }

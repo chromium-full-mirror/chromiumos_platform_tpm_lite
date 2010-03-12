@@ -3,7 +3,14 @@
 # found in the LICENSE file.
 
 INCLUDEDIRS = -I../include -I../../../../third_party/tpm-emulator/tpmd/unix
-CFLAGS += -g -Wall -Werror -ansi -pedantic $(INCLUDEDIRS)
+CFLAGS += -g -Wall -Werror $(INCLUDEDIRS)
+# CFLAGS += -ansi -pedantic
+ifeq ($(USE_TPM_EMULATOR),1)
+CFLAGS += -DUSE_TPM_EMULATOR=1
+else
+CFLAGS += -DUSE_TPM_EMULATOR=0
+endif
+
 CC ?= cc
 
 libtlcl.a: tlcl.o 

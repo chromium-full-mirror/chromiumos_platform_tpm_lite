@@ -11,7 +11,44 @@
 #ifndef TPM_LITE_TLCL_H_
 #define TPM_LITE_TLCL_H_
 
+#include <stdarg.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#define POSSIBLY_UNUSED __attribute__((unused))
+
+#ifdef __STRICT_ANSI__
+#define INLINE
+#else
+#define INLINE inline
+#endif
+
+/* Outputs an error message and quits the program.
+ */
+static void error(const char *format, ...) {
+  va_list ap;
+  va_start(ap, format);
+  fprintf(stderr, "ERROR: ");
+  vfprintf(stderr, format, ap);
+  va_end(ap);
+  exit(1);
+}
+
+/* Outputs a warning and continues.
+ */
+POSSIBLY_UNUSED
+static void warning(const char *format, ...) {
+  va_list ap;
+  va_start(ap, format);
+  fprintf(stderr, "WARNING: ");
+  vfprintf(stderr, format, ap);
+  va_end(ap);
+}
+
+#define assert(expr) do { if (!(expr)) { \
+      error("assert fail: %s at %s:%d\n", \
+            #expr, __FILE__, __LINE__); }} while(0)
 
 /* Call this first.
  */
@@ -57,5 +94,9 @@ void TlclAssertPhysicalPresence(void);
 /* Sets the nvLocked bit.
  */
 void TlclSetNvLocked(void);
+
+/* Returns 1 if the TPM is owned, 0 otherwise.
+ */
+int TlclIsOwned(void);
 
 #endif  /* TPM_LITE_TLCL_H_ */
