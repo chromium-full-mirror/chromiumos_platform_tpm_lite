@@ -7,8 +7,6 @@
 #define TPM_LITE_TLCL_INTERNAL_H_
 
 #include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
 
 typedef int bool;
 const bool true = 1;
@@ -60,7 +58,7 @@ static INLINE void FromTpmUint16(const uint8_t *buffer, uint16_t *x) {
  * TPM commands manual.
  */
 const int kTpmRequestHeaderLength = 10;
-const int kTpmResponseHeaderLength = 14;
+const int kTpmResponseHeaderLength = 10;
 const int kTpmReadInfoLength = 12;
 const int kEncAuthLength = 20;
 

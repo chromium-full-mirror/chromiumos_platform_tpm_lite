@@ -191,7 +191,7 @@ Command* BuildStartupCommand(void) {
 }
 
 Command* BuildSelftestfullCommand(void) {
-  int size = kTpmRequestHeaderLength + sizeof(TPM_PHYSICAL_PRESENCE);
+  int size = kTpmRequestHeaderLength;
   Command* cmd = newCommand(TPM_ORD_SelfTestFull, size);
   cmd->name = "tpm_selftestfull_cmd";
   return cmd;

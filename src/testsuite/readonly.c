@@ -35,7 +35,7 @@
  */
 void InitializeSpaces(void) {
   uint32_t zero = 0;
-  uint32_t perm = TPM_NV_PER_WRITE_STCLEAR;
+  uint32_t perm = TPM_NV_PER_WRITE_STCLEAR | TPM_NV_PER_PPWRITE;
 
   printf("Initializing spaces\n");
   TlclSetNvLocked();  /* useful only the first time */
@@ -67,10 +67,8 @@ int main(void) {
 
   TlclLibinit();
 
-#if 0
   TlclStartup();
   TlclSelftestfull();
-#endif
 
   TlclAssertPhysicalPresence();
 

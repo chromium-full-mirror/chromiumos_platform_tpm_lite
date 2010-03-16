@@ -17,6 +17,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
+#include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <tss/tcs.h>
@@ -134,7 +135,10 @@ static void SendReceive(uint8_t* request, uint8_t* response, int max_length) {
 #if USE_TPM_EMULATOR
   tpmemu_execute(request, TpmCommandSize(request), response, &response_length);
 #else
+  struct timeval before, after;
+  gettimeofday(&before, NULL);
   TpmExecute(request, TpmCommandSize(request), response, &response_length);
+  gettimeofday(&after, NULL);
 #endif
 
   {
@@ -146,6 +150,9 @@ static void SendReceive(uint8_t* request, uint8_t* response, int max_length) {
     printf("response (%d bytes): ", y);
     PrintBytes(response, 10);
     PrintBytes(response + 10, y - 10);
+    printf("execution time: %dms\n",
+           (int) ((after.tv_sec - before.tv_sec) * 1000 +
+                  (after.tv_usec - before.tv_usec) / 1000));
   }
 
   /* sanity checks */
