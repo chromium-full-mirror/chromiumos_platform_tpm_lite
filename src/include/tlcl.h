@@ -26,6 +26,7 @@
 
 /* Outputs an error message and quits the program.
  */
+POSSIBLY_UNUSED
 static void error(const char *format, ...) {
   va_list ap;
   va_start(ap, format);
@@ -98,5 +99,21 @@ void TlclSetNvLocked(void);
 /* Returns 1 if the TPM is owned, 0 otherwise.
  */
 int TlclIsOwned(void);
+
+/* Issues a ForceClear.
+ */
+void TlclForceClear(void);
+
+/* Issues a PhysicalEnable.
+ */
+void TlclPhysicalEnable(void);
+
+/* Issues a PhysicalSetDeactivated.  Pass 0 to activate.  Returns result code.
+ */
+int TlclPhysicalSetDeactivated(uint8_t flag);
+
+/* Gets some permanent flags of interest.  (Add more here as needed.)
+ */
+int TlclGetFlags(uint8_t* disable, uint8_t* deactivated);
 
 #endif  /* TPM_LITE_TLCL_H_ */

@@ -204,6 +204,47 @@ Command* BuildReadPubekCommand(void) {
   return cmd;  
 }
 
+Command* BuildForceClearCommand(void) {
+  int size = kTpmRequestHeaderLength;
+  Command* cmd = newCommand(TPM_ORD_ForceClear, size);
+  cmd->name = "tpm_forceclear_cmd";
+  return cmd;  
+}
+
+Command* BuildPhysicalEnableCommand(void) {
+  int size = kTpmRequestHeaderLength;
+  Command* cmd = newCommand(TPM_ORD_PhysicalEnable, size);
+  cmd->name = "tpm_physicalenable_cmd";
+  return cmd;  
+}
+
+Command* BuildPhysicalSetDeactivatedCommand(void) {
+  int size = kTpmRequestHeaderLength + sizeof(uint8_t);
+  Command* cmd = newCommand(TPM_ORD_PhysicalSetDeactivated, size);
+  cmd->name = "tpm_physicalsetdeactivated_cmd";
+  AddVisibleField(cmd, "deactivated", kTpmRequestHeaderLength);
+  return cmd;  
+}
+
+Command* BuildGetCapabilityCommand(void) {
+  int size = (kTpmRequestHeaderLength +
+              sizeof(TPM_CAPABILITY_AREA) +   /* capArea */
+              sizeof(uint32_t) +              /* subCapSize */
+              sizeof(uint32_t));               /* subCap */
+    
+  Command* cmd = newCommand(TPM_ORD_GetCapability, size);
+  cmd->name = "tpm_getcapability_cmd";
+  AddInitializedField(cmd, kTpmRequestHeaderLength,
+                      sizeof(TPM_CAPABILITY_AREA), TPM_CAP_FLAG);
+  AddInitializedField(cmd, kTpmRequestHeaderLength +
+                      sizeof(TPM_CAPABILITY_AREA),
+                      sizeof(uint32_t), sizeof(uint32_t));
+  AddInitializedField(cmd, kTpmRequestHeaderLength +
+                      sizeof(TPM_CAPABILITY_AREA) + sizeof(uint32_t),
+                      sizeof(uint32_t), TPM_CAP_FLAG_PERMANENT);
+  return cmd;  
+}
+
 /* Output the fields of a structure.
  */
 void OutputFields(Field* fld) {
@@ -307,6 +348,10 @@ Command* (*builders[])(void) = {
   BuildStartupCommand,
   BuildSelftestfullCommand,
   BuildReadPubekCommand,
+  BuildForceClearCommand,
+  BuildPhysicalEnableCommand,
+  BuildPhysicalSetDeactivatedCommand,
+  BuildGetCapabilityCommand,
 };
 
 static void FreeFields(Field* fld) {

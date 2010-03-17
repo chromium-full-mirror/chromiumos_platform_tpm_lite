@@ -150,9 +150,11 @@ static void SendReceive(uint8_t* request, uint8_t* response, int max_length) {
     printf("response (%d bytes): ", y);
     PrintBytes(response, 10);
     PrintBytes(response + 10, y - 10);
+#if !USE_TPM_EMULATOR
     printf("execution time: %dms\n",
            (int) ((after.tv_sec - before.tv_sec) * 1000 +
                   (after.tv_usec - before.tv_usec) / 1000));
+#endif
   }
 
   /* sanity checks */
@@ -272,4 +274,49 @@ int TlclIsOwned(void) {
   SendReceive(tpm_readpubek_cmd.buffer, response, sizeof(response));
   result = TpmReturnCode(response);
   return (result != TPM_SUCCESS);
+}
+
+void TlclForceClear(void) {
+  uint8_t response[TPM_LARGE_ENOUGH_COMMAND_SIZE];
+  uint32_t result;
+  SendReceive(tpm_forceclear_cmd.buffer, response, sizeof(response));
+  result = TpmReturnCode(response);
+  if (result != TPM_SUCCESS) {
+    warning("ForceClear failed with code %d (0x%x)\n", result, result);
+  }
+}
+
+void TlclPhysicalEnable(void) {
+  Send(tpm_physicalenable_cmd.buffer);
+}
+
+int TlclPhysicalSetDeactivated(uint8_t flag) {
+  uint8_t response[TPM_LARGE_ENOUGH_COMMAND_SIZE];
+  uint32_t result;
+  *((uint8_t*)tpm_physicalsetdeactivated_cmd.deactivated) = flag;
+  SendReceive(tpm_physicalsetdeactivated_cmd.buffer,
+              response, sizeof(response));
+  result = TpmReturnCode(response);
+  return result;
+}
+
+int TlclGetFlags(uint8_t* disable, uint8_t* deactivated) {
+  
+  uint8_t response[TPM_LARGE_ENOUGH_COMMAND_SIZE];
+  TPM_PERMANENT_FLAGS* pflags;
+  uint32_t result;
+  uint32_t size;
+
+  SendReceive(tpm_getcapability_cmd.buffer, response, sizeof(response));
+  result = TpmReturnCode(response);
+  if (result != TPM_SUCCESS) {
+    return result;
+  }
+  FromTpmUint32(response + kTpmResponseHeaderLength, &size);
+  assert(size == sizeof(TPM_PERMANENT_FLAGS));
+  pflags =
+    (TPM_PERMANENT_FLAGS*) (response + kTpmResponseHeaderLength + sizeof(size));
+  *disable = pflags->disable;
+  *deactivated = pflags->deactivated;
+  return result;
 }

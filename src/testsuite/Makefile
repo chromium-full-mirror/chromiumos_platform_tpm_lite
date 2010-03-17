@@ -23,7 +23,7 @@ CC ?= cc
 CFLAGS += -Werror -Wall
 #CFLAGS += -pedantic -ansi
 
-TESTS = tpmtest_readonly
+TESTS = tpmtest_readonly tpmtest_clear tpmtest_writelimit tpmtest_lock
 
 all: $(TESTS)
 
