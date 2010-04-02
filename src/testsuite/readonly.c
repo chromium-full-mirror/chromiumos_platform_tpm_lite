@@ -61,11 +61,11 @@ void EnterRecoveryMode(void) {
 }
   
 
-int main(void) {
+int main(int argc, char** argv) {
   uint8_t c;
   uint32_t index_0, index_1, index_2, index_3;
 
-  TlclLibinit();
+  TlclLibInit();
 
   TlclStartup();
   TlclSelftestfull();

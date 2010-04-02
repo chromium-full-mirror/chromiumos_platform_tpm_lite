@@ -170,13 +170,23 @@ Command* BuildReadCommand(void) {
   return cmd;
 }
 
-Command* BuildPhysicalPresenceCommand(void) {
+Command* BuildPPAssertCommand(void) {
   int size = kTpmRequestHeaderLength + sizeof(TPM_PHYSICAL_PRESENCE);
   Command* cmd = newCommand(TSC_ORD_PhysicalPresence, size);
-  cmd->name = "tpm_physicalpresence_cmd";
+  cmd->name = "tpm_ppassert_cmd";
   AddInitializedField(cmd, kTpmRequestHeaderLength,
                       sizeof(TPM_PHYSICAL_PRESENCE),
                       TPM_PHYSICAL_PRESENCE_PRESENT);
+  return cmd;
+}
+
+Command* BuildPPLockCommand(void) {
+  int size = kTpmRequestHeaderLength + sizeof(TPM_PHYSICAL_PRESENCE);
+  Command* cmd = newCommand(TSC_ORD_PhysicalPresence, size);
+  cmd->name = "tpm_pplock_cmd";
+  AddInitializedField(cmd, kTpmRequestHeaderLength,
+                      sizeof(TPM_PHYSICAL_PRESENCE),
+                      TPM_PHYSICAL_PRESENCE_LOCK);
   return cmd;
 }
 
@@ -344,7 +354,8 @@ Command* (*builders[])(void) = {
   BuildDefineSpaceCommand,
   BuildWriteCommand,
   BuildReadCommand,
-  BuildPhysicalPresenceCommand,
+  BuildPPAssertCommand,
+  BuildPPLockCommand,
   BuildStartupCommand,
   BuildSelftestfullCommand,
   BuildReadPubekCommand,

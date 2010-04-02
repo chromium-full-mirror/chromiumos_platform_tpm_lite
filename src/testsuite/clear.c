@@ -3,28 +3,17 @@
  * found in the LICENSE file.
  */
 
-/* Testing: ownership testing code, ForceClear, and nvram write limit.
+/* Testing: ownership testing code and ForceClear.
  */
 
 #include <stdio.h>
-#include <stdint.h>
-#include <stdlib.h>
-#include <tss/tcs.h>
 
 #include "tlcl.h"
 
-/* These index values are used to create NVRAM spaces.  They only need to be
- * unique.
- */
-#define INDEX0 0xda70
-#define INDEX1 0xda71
-#define INDEX2 0xda72
-#define INDEX3 0xda73
-
-int main(void) {
+int main(int argc, char** argv) {
   int owned;
 
-  TlclLibinit();
+  TlclLibInit();
 
 #if !USE_TPM_EMULATOR
   /* The emulator does these itself. */

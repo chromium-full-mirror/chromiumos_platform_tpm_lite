@@ -53,7 +53,15 @@ static void warning(const char *format, ...) {
 
 /* Call this first.
  */
-void TlclLibinit(void);
+void TlclLibInit(void);
+
+/* Logs to stdout.  Arguments like printf.
+ */
+void TlclLog(char* format, ...);
+
+/* Sets the log level.  0 is quietest.
+ */
+void TlclSetLogLevel(int level);
 
 /* Sends a TPM_Startup(ST_CLEAR).  Note that this is a no-op for the emulator,
  * because it runs this command during initialization.
@@ -92,6 +100,10 @@ void TlclReadLock(uint32_t index);
  */
 void TlclAssertPhysicalPresence(void);
 
+/* Turns off physical presence and locks it off until next reboot.
+ */
+void TlclLockPhysicalPresence(void);
+
 /* Sets the nvLocked bit.
  */
 void TlclSetNvLocked(void);
@@ -104,16 +116,21 @@ int TlclIsOwned(void);
  */
 void TlclForceClear(void);
 
-/* Issues a PhysicalEnable.
+/* Issues a SetEnable.
  */
-void TlclPhysicalEnable(void);
+void TlclSetEnable(void);
 
-/* Issues a PhysicalSetDeactivated.  Pass 0 to activate.  Returns result code.
+/* Issues a SetDeactivated.  Pass 0 to activate.  Returns result code.
  */
-int TlclPhysicalSetDeactivated(uint8_t flag);
+int TlclSetDeactivated(uint8_t flag);
 
-/* Gets some permanent flags of interest.  (Add more here as needed.)
+/* Gets flags of interest.  (Add more here as needed.)
  */
 int TlclGetFlags(uint8_t* disable, uint8_t* deactivated);
+
+/* Sets the bGlobalLock flag, which only a reboot can clear.
+ */
+void TlclSetGlobalLock(void);
+  
 
 #endif  /* TPM_LITE_TLCL_H_ */

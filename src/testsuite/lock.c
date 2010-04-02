@@ -7,17 +7,15 @@
  */
 
 #include <stdio.h>
-#include <stdint.h>
 #include <stdlib.h>
-#include <tss/tcs.h>
 
 #include "tlcl.h"
 
 #define INDEX0 0xda70
 
 
-int main(void) {
-  TlclLibinit();
+int main(int argc, char** argv) {
+  TlclLibInit();
 
   TlclStartup();
   TlclSelftestfull();

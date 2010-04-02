@@ -3,7 +3,8 @@
 # found in the LICENSE file.
 
 INCLUDEDIRS = -I../include -I../../../../third_party/tpm-emulator/tpmd/unix
-CFLAGS += -g -Wall -Werror $(INCLUDEDIRS)
+LOCAL_CFLAGS = -g -Wall -Werror $(INCLUDEDIRS)
+CFLAGS += $(LOCAL_CFLAGS)
 # CFLAGS += -ansi -pedantic
 ifeq ($(USE_TPM_EMULATOR),1)
 CFLAGS += -DUSE_TPM_EMULATOR=1
@@ -12,6 +13,7 @@ CFLAGS += -DUSE_TPM_EMULATOR=0
 endif
 
 CC ?= cc
+HOSTCC = cc
 
 libtlcl.a: tlcl.o 
 	ar rcs libtlcl.a tlcl.o
@@ -22,7 +24,8 @@ structures.h: generator
 	./generator > structures.h
 
 generator: generator.c ../include/tlcl.h
-	$(CC) $(CFLAGS) -fpack-struct generator.c -o generator
+	$(HOSTCC) $(LOCAL_CFLAGS) -I$(ROOT)/usr/include \
+	-fpack-struct generator.c -o generator
 
 clean:
 	rm -f generator *.o *.a structures.h *~

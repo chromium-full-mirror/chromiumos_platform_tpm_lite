@@ -16,12 +16,12 @@
 #define INDEX0 0xda70
 #define TPM_MAX_NV_WRITES_NOOWNER 64
 
-int main(void) {
+int main(int argc, char** argv) {
   int i;
   uint32_t result;
   uint8_t disable, deactivated;  /* the TPM specs use these exact names */
 
-  TlclLibinit();
+  TlclLibInit();
 
   TlclStartup();
   TlclSelftestfull();
@@ -32,8 +32,8 @@ int main(void) {
   printf("disable is %d, deactivated is %d\n", disable, deactivated);
   
   if (disable || deactivated) {
-    TlclPhysicalEnable();
-    (void) TlclPhysicalSetDeactivated(0);
+    TlclSetEnable();
+    (void) TlclSetDeactivated(0);
     printf("TPM will be active after next reboot\n");
     exit(0);
   }

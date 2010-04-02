@@ -16,6 +16,8 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <stdarg.h>
+#include <stdio.h>
 #include <string.h>
 #include <sys/time.h>
 #include <sys/types.h>
@@ -34,18 +36,22 @@
  */
 int tpm_fd = -1;
 
+/* Log level.  0 is quietest.  Be verbose by default.
+ */
+int tlcl_log_level = 1;
+
 /* Print |n| bytes from array |a|, with newlines.
  */
 static void PrintBytes(uint8_t* a, int n) {
   int i;
   for (i = 0; i < n; i++) {
-    printf("%02x ", a[i]);
+    TlclLog("%02x ", a[i]);
     if ((i + 1) % 16 == 0) {
-      printf("\n");
+      TlclLog("\n");
     }
   }
   if (i % 16 != 0) {
-    printf("\n");
+    TlclLog("\n");
   }
 }
 
@@ -104,7 +110,7 @@ void TpmExecute(const uint8_t *in, const uint32_t in_len,
   if (in_len <= 0) {
     error("invalid command length %d\n", in_len);
   } else if (tpm_fd < 0) {
-    error("the TPM device was not opened.  Forgot to call TlclLibinit?\n");
+    error("the TPM device was not opened.  Forgot to call TlclLibInit?\n");
   } else {
     int n = write(tpm_fd, in, in_len);
     if (n != in_len) {
@@ -144,16 +150,16 @@ static void SendReceive(uint8_t* request, uint8_t* response, int max_length) {
   {
     int x = TpmCommandSize(request);
     int y = response_length;
-    printf("request (%d bytes): ", x);
+    TlclLog("request (%d bytes): ", x);
     PrintBytes(request, 10);
     PrintBytes(request + 10, x - 10);
-    printf("response (%d bytes): ", y);
+    TlclLog("response (%d bytes): ", y);
     PrintBytes(response, 10);
     PrintBytes(response + 10, y - 10);
 #if !USE_TPM_EMULATOR
-    printf("execution time: %dms\n",
-           (int) ((after.tv_sec - before.tv_sec) * 1000 +
-                  (after.tv_usec - before.tv_usec) / 1000));
+    TlclLog("execution time: %dms\n",
+            (int) ((after.tv_sec - before.tv_sec) * 1000 +
+                   (after.tv_usec - before.tv_usec) / 1000));
 #endif
   }
 
@@ -184,7 +190,20 @@ static void Send(uint8_t* command) {
 /* Exported functions.
  */
 
-void TlclLibinit(void) {
+void TlclLog(char* format, ...) {
+  va_list ap;
+  if (tlcl_log_level > 0) {
+    va_start(ap, format);
+    vprintf(format, ap);
+    va_end(ap);
+  }
+}
+
+void TlclSetLogLevel(int level) {
+  tlcl_log_level = level;
+}
+
+void TlclLibInit(void) {
 #if USE_TPM_EMULATOR
   tpmemu_init();
 #else
@@ -261,7 +280,11 @@ void TlclReadLock(uint32_t index) {
 }
 
 void TlclAssertPhysicalPresence(void) {
-  Send(tpm_physicalpresence_cmd.buffer);
+  Send(tpm_ppassert_cmd.buffer);
+}
+
+void TlclLockPhysicalPresence(void) {
+  Send(tpm_pplock_cmd.buffer);
 }
 
 void TlclSetNvLocked(void) {
@@ -286,11 +309,11 @@ void TlclForceClear(void) {
   }
 }
 
-void TlclPhysicalEnable(void) {
+void TlclSetEnable(void) {
   Send(tpm_physicalenable_cmd.buffer);
 }
 
-int TlclPhysicalSetDeactivated(uint8_t flag) {
+int TlclSetDeactivated(uint8_t flag) {
   uint8_t response[TPM_LARGE_ENOUGH_COMMAND_SIZE];
   uint32_t result;
   *((uint8_t*)tpm_physicalsetdeactivated_cmd.deactivated) = flag;
@@ -319,4 +342,10 @@ int TlclGetFlags(uint8_t* disable, uint8_t* deactivated) {
   *disable = pflags->disable;
   *deactivated = pflags->deactivated;
   return result;
+}
+
+void TlclSetGlobalLock(void) {
+  uint32_t x;
+  uint32_t result = TlclWrite(TPM_NV_INDEX0, (uint8_t*) &x, 0);
+  assert(result == TPM_SUCCESS);
 }
