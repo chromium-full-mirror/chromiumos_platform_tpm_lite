@@ -12,6 +12,14 @@
  * as well as the offsets of the fields that need to be set at run time.
  */
 
+/* This should change, probably by removing this and defining BIOS in the build.
+ */
+#if defined(unix)
+#define BIOS 0
+#else
+#define BIOS 1
+#endif
+
 #include "tlcl.h"
 
 #include <errno.h>
@@ -102,6 +110,7 @@ static void CheckResult(uint8_t* request, uint8_t* response, bool warn_only) {
   }
 }
 
+#if !BIOS
 /* Executes a command on the TPM.
  */
 void TpmExecute(const uint8_t *in, const uint32_t in_len,
@@ -131,6 +140,7 @@ void TpmExecute(const uint8_t *in, const uint32_t in_len,
     }
   }
 }
+#endif  /* !BIOS */
 
 /* Sends a request and receive a response.
  */
@@ -138,6 +148,18 @@ static void SendReceive(uint8_t* request, uint8_t* response, int max_length) {
   uint32_t response_length = max_length;
   int tag, response_tag;
 
+#if BIOS
+  /*
+   * Note: the code included for BIOS has not ever been compiled at Google.  It
+   * is here only to present what the interface to the EFI driver would look
+   * like (see section 3.1.4, TCG EFI protocol specification, page 16).  In
+   * addition, error handling is not considered.
+   */
+  EFI_STATUS status;
+  status = tgc_pass_through(tcg_protocol,
+                            TpmCommandSize(request), request,
+                            max_length, response);
+#else  /* BIOS */
 #if USE_TPM_EMULATOR
   tpmemu_execute(request, TpmCommandSize(request), response, &response_length);
 #else
@@ -145,8 +167,7 @@ static void SendReceive(uint8_t* request, uint8_t* response, int max_length) {
   gettimeofday(&before, NULL);
   TpmExecute(request, TpmCommandSize(request), response, &response_length);
   gettimeofday(&after, NULL);
-#endif
-
+#endif  /* USE_TPM_EMULATOR */
   {
     int x = TpmCommandSize(request);
     int y = response_length;
@@ -161,6 +182,7 @@ static void SendReceive(uint8_t* request, uint8_t* response, int max_length) {
             (int) ((after.tv_sec - before.tv_sec) * 1000 +
                    (after.tv_usec - before.tv_usec) / 1000));
 #endif
+#endif  /* BIOS */
   }
 
   /* sanity checks */
@@ -207,11 +229,13 @@ void TlclLibInit(void) {
 #if USE_TPM_EMULATOR
   tpmemu_init();
 #else
+#if !BIOS
   tpm_fd = open("/dev/tpm0", O_RDWR);
   if (tpm_fd < 0) {
     error("cannot open TPM device: %s\n", strerror(errno));
   }
-#endif
+#endif  /* !BIOS */
+#endif  /* USE_TPM_EMULATOR */
 }
 
 void TlclStartup(void) {
@@ -324,7 +348,6 @@ int TlclSetDeactivated(uint8_t flag) {
 }
 
 int TlclGetFlags(uint8_t* disable, uint8_t* deactivated) {
-  
   uint8_t response[TPM_LARGE_ENOUGH_COMMAND_SIZE];
   TPM_PERMANENT_FLAGS* pflags;
   uint32_t result;
