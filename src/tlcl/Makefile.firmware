@@ -1,0 +1,16 @@
+# Copyright (c) 2010 The Chromium OS Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+CC ?= gcc
+CFLAGS += -Wall -Werror -ansi -DFIRMWARE
+
+all: firmware
+
+.PHONY: firmware
+
+firmware: tlcl.c tlcl_internal.h tlcl.h saved-structures.h
+	$(CC) -Wall -Werror -ansi -DFIRMWARE -c tlcl.c
+
+clean:
+	rm -f *.o

@@ -131,6 +131,5 @@ int TlclGetFlags(uint8_t* disable, uint8_t* deactivated);
 /* Sets the bGlobalLock flag, which only a reboot can clear.
  */
 void TlclSetGlobalLock(void);
-  
 
 #endif  /* TPM_LITE_TLCL_H_ */

@@ -8,8 +8,11 @@
 USE_TPM_EMULATOR ?= 1
 
 default:
-	@echo "Usage: make { local | cross } [ USE_TPM_EMULATOR=0 ]"
+	@echo "Usage: make { firmware | local | cross } [ USE_TPM_EMULATOR=0 ]"
 	@exit 1
+
+firmware:
+	(cd tlcl; $(MAKE) -f Makefile.firmware)
 
 local:
 	(cd tlcl; $(MAKE) USE_TPM_EMULATOR=$(USE_TPM_EMULATOR))

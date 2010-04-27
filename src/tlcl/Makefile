@@ -2,7 +2,7 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-INCLUDEDIRS = -I../include -I../../../../third_party/tpm-emulator/tpmd/unix
+INCLUDEDIRS = -I../../../../third_party/tpm-emulator/tpmd/unix
 LOCAL_CFLAGS = -g -Wall -Werror $(INCLUDEDIRS)
 CFLAGS += $(LOCAL_CFLAGS)
 # CFLAGS += -ansi -pedantic
@@ -18,12 +18,12 @@ HOSTCC = cc
 libtlcl.a: tlcl.o 
 	ar rcs libtlcl.a tlcl.o
 
-tlcl.o: tlcl.c tlcl_internal.h ../include/tlcl.h structures.h
+tlcl.o: tlcl.c tlcl_internal.h tlcl.h structures.h
 
 structures.h: generator
 	./generator > structures.h
 
-generator: generator.c ../include/tlcl.h
+generator: generator.c tlcl.h
 	$(HOSTCC) $(LOCAL_CFLAGS) -I$(ROOT)/usr/include \
 	-fpack-struct generator.c -o generator
 

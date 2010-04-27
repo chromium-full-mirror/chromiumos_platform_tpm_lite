@@ -36,7 +36,7 @@ $(TESTS): tpmtest_%: %.o $(LIBS)
 	$(CC) $(LDFLAGS) -g $< -o $@ $(LIBS)
 
 .c.o:
-	$(CC) $(CFLAGS) -g -c $< -I../include
+	$(CC) $(CFLAGS) -g -c $< -I../tlcl/
 
 clean:
 	rm -f $(TESTS) *.o *~

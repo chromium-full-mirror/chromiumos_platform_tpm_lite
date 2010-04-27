@@ -12,14 +12,6 @@
  * as well as the offsets of the fields that need to be set at run time.
  */
 
-/* This should change, probably by removing this and defining BIOS in the build.
- */
-#if defined(unix)
-#define BIOS 0
-#else
-#define BIOS 1
-#endif
-
 #include "tlcl.h"
 
 #include <errno.h>
@@ -30,15 +22,22 @@
 #include <sys/time.h>
 #include <sys/types.h>
 #include <sys/stat.h>
-#include <tss/tcs.h>
 #include <unistd.h>
 
+#ifdef FIRMWARE
+#include "saved-structures.h"
+#include "tss_constants.h"
+#else
+#include <tss/tcs.h>
 #include "structures.h"
+#include "tpmextras.h"
+#endif  /* FIRMWARE */
+
 #include "tlcl_internal.h"
+
 #if USE_TPM_EMULATOR
 #include "tpmemu.h"
 #endif
-#include "tpmextras.h"
 
 /* The file descriptor for the TPM device.
  */
@@ -50,7 +49,7 @@ int tlcl_log_level = 1;
 
 /* Print |n| bytes from array |a|, with newlines.
  */
-static void PrintBytes(uint8_t* a, int n) {
+POSSIBLY_UNUSED static void PrintBytes(uint8_t* a, int n) {
   int i;
   for (i = 0; i < n; i++) {
     TlclLog("%02x ", a[i]);
@@ -65,7 +64,7 @@ static void PrintBytes(uint8_t* a, int n) {
 
 /* Gets the tag field of a TPM command.
  */
-static INLINE int TpmTag(uint8_t* buffer) {
+POSSIBLY_UNUSED static INLINE int TpmTag(uint8_t* buffer) {
   uint16_t tag;
   FromTpmUint16(buffer, &tag);
   return (int) tag;
@@ -79,7 +78,7 @@ static INLINE void SetTpmCommandSize(uint8_t* buffer, uint32_t size) {
 
 /* Gets the size field of a TPM command.
  */
-static INLINE int TpmCommandSize(const uint8_t* buffer) {
+POSSIBLY_UNUSED static INLINE int TpmCommandSize(const uint8_t* buffer) {
   uint32_t size;
   FromTpmUint32(buffer + sizeof(uint16_t), &size);
   return (int) size;
@@ -110,7 +109,7 @@ static void CheckResult(uint8_t* request, uint8_t* response, bool warn_only) {
   }
 }
 
-#if !BIOS
+#ifndef FIRMWARE
 /* Executes a command on the TPM.
  */
 void TpmExecute(const uint8_t *in, const uint32_t in_len,
@@ -140,26 +139,32 @@ void TpmExecute(const uint8_t *in, const uint32_t in_len,
     }
   }
 }
-#endif  /* !BIOS */
+#endif  /* !FIRMWARE */
 
 /* Sends a request and receive a response.
  */
 static void SendReceive(uint8_t* request, uint8_t* response, int max_length) {
+
+#ifdef FIRMWARE
+  /*
+   * FIXME: This #if block should contain the equivalent API call for the
+   * firmware TPM driver which takes a raw sequence of bytes as input
+   * command and a pointer to the output buffer for putting in the results.
+   *
+   * For EFI firmwares, this can make use of the EFI TPM driver as follows
+   * (based on page 16, of TCG EFI Protocol Specs Version 1.20 availaible from
+   * the TCG website):
+   *
+   * EFI_STATUS status;
+   * status = TcgProtocol->EFI_TCG_PASS_THROUGH_TO_TPM(TpmCommandSize(request),
+   *                                                   request,
+   *                                                   max_length,
+   *                                                   response);
+   * // Error checking depending on the value of the status above
+   */
+#else  /* FIRMWARE */
   uint32_t response_length = max_length;
   int tag, response_tag;
-
-#if BIOS
-  /*
-   * Note: the code included for BIOS has not ever been compiled at Google.  It
-   * is here only to present what the interface to the EFI driver would look
-   * like (see section 3.1.4, TCG EFI protocol specification, page 16).  In
-   * addition, error handling is not considered.
-   */
-  EFI_STATUS status;
-  status = tgc_pass_through(tcg_protocol,
-                            TpmCommandSize(request), request,
-                            max_length, response);
-#else  /* BIOS */
 #if USE_TPM_EMULATOR
   tpmemu_execute(request, TpmCommandSize(request), response, &response_length);
 #else
@@ -181,10 +186,8 @@ static void SendReceive(uint8_t* request, uint8_t* response, int max_length) {
     TlclLog("execution time: %dms\n",
             (int) ((after.tv_sec - before.tv_sec) * 1000 +
                    (after.tv_usec - before.tv_usec) / 1000));
-#endif
-#endif  /* BIOS */
+#endif  /* !USE_TPM_EMULATOR */
   }
-
   /* sanity checks */
   tag = TpmTag(request);
   response_tag = TpmTag(response);
@@ -196,6 +199,8 @@ static void SendReceive(uint8_t* request, uint8_t* response, int max_length) {
     (tag == TPM_TAG_RQU_AUTH2_COMMAND &&
      response_tag == TPM_TAG_RSP_AUTH2_COMMAND));
   assert(response_length == TpmCommandSize(response));
+#endif  /* FIRMWARE */
+
 }
 
 /* Sends a command and checks the result for errors.  Note that this error
@@ -229,12 +234,12 @@ void TlclLibInit(void) {
 #if USE_TPM_EMULATOR
   tpmemu_init();
 #else
-#if !BIOS
+#if !FIRMWARE
   tpm_fd = open("/dev/tpm0", O_RDWR);
   if (tpm_fd < 0) {
     error("cannot open TPM device: %s\n", strerror(errno));
   }
-#endif  /* !BIOS */
+#endif  /* !FIRMWARE */
 #endif  /* USE_TPM_EMULATOR */
 }
 
