@@ -102,7 +102,7 @@ void TlclAssertPhysicalPresence(void);
 
 /* Turns off physical presence and locks it off until next reboot.
  */
-void TlclLockPhysicalPresence(void);
+uint32_t TlclLockPhysicalPresence(void);
 
 /* Sets the nvLocked bit.
  */
@@ -130,6 +130,6 @@ int TlclGetFlags(uint8_t* disable, uint8_t* deactivated);
 
 /* Sets the bGlobalLock flag, which only a reboot can clear.
  */
-void TlclSetGlobalLock(void);
+uint32_t TlclSetGlobalLock(void);
 
 #endif  /* TPM_LITE_TLCL_H_ */

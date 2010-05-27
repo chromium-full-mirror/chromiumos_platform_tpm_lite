@@ -312,8 +312,10 @@ void TlclAssertPhysicalPresence(void) {
   Send(tpm_ppassert_cmd.buffer);
 }
 
-void TlclLockPhysicalPresence(void) {
-  Send(tpm_pplock_cmd.buffer);
+uint32_t TlclLockPhysicalPresence(void) {
+  uint8_t response[TPM_LARGE_ENOUGH_COMMAND_SIZE];
+  SendReceive(tpm_pplock_cmd.buffer, response, sizeof(response));
+  return TpmReturnCode(response);
 }
 
 void TlclSetNvLocked(void) {
@@ -372,8 +374,7 @@ int TlclGetFlags(uint8_t* disable, uint8_t* deactivated) {
   return result;
 }
 
-void TlclSetGlobalLock(void) {
+uint32_t TlclSetGlobalLock(void) {
   uint32_t x;
-  uint32_t result = TlclWrite(TPM_NV_INDEX0, (uint8_t*) &x, 0);
-  assert(result == TPM_SUCCESS);
+  return TlclWrite(TPM_NV_INDEX0, (uint8_t*) &x, 0);
 }
