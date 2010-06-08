@@ -203,16 +203,13 @@ static void SendReceive(uint8_t* request, uint8_t* response, int max_length) {
 
 }
 
-/* Sends a command and checks the result for errors.  Note that this error
- * checking is only meaningful when running in user mode.  TODO: The entire
- * error recovery strategy in the firmware needs more work.
+/* Sends a command and returns the error code.
  */
-static void Send(uint8_t* command) {
+static uint32_t Send(uint8_t* command) {
   uint8_t response[TPM_LARGE_ENOUGH_COMMAND_SIZE];
   SendReceive(command, response, sizeof(response));
-  CheckResult(command, response, false);
+  return TpmReturnCode(response);
 }
-
 
 /* Exported functions.
  */
@@ -243,19 +240,19 @@ void TlclLibInit(void) {
 #endif  /* USE_TPM_EMULATOR */
 }
 
-void TlclStartup(void) {
-  Send(tpm_startup_cmd.buffer);
+uint32_t TlclStartup(void) {
+  return Send(tpm_startup_cmd.buffer);
 }
 
-void TlclSelftestfull(void) {
-  Send(tpm_selftestfull_cmd.buffer);
+uint32_t TlclSelftestfull(void) {
+  return Send(tpm_selftestfull_cmd.buffer);
 }
 
-void TlclDefineSpace(uint32_t index, uint32_t perm, uint32_t size) {
+uint32_t TlclDefineSpace(uint32_t index, uint32_t perm, uint32_t size) {
   ToTpmUint32(tpm_nv_definespace_cmd.index, index);
   ToTpmUint32(tpm_nv_definespace_cmd.perm, perm);
   ToTpmUint32(tpm_nv_definespace_cmd.size, size);
-  Send(tpm_nv_definespace_cmd.buffer);
+  return Send(tpm_nv_definespace_cmd.buffer);
 }
 
 uint32_t TlclWrite(uint32_t index, uint8_t* data, uint32_t length) {
@@ -296,30 +293,24 @@ uint32_t TlclRead(uint32_t index, uint8_t* data, uint32_t length) {
   return result;
 }
 
-void TlclWriteLock(uint32_t index) {
-  if (TlclWrite(index, NULL, 0) != TPM_SUCCESS) {
-    error("failed to write lock space 0x%x\n", index);
-  }
+uint32_t TlclWriteLock(uint32_t index) {
+  return TlclWrite(index, NULL, 0);
 }
 
-void TlclReadLock(uint32_t index) {
-  if (TlclRead(index, NULL, 0) != TPM_SUCCESS) {
-    error("failed to read lock space 0x%x\n", index);
-  }
+uint32_t TlclReadLock(uint32_t index) {
+  return TlclRead(index, NULL, 0);
 }
 
-void TlclAssertPhysicalPresence(void) {
-  Send(tpm_ppassert_cmd.buffer);
+uint32_t TlclAssertPhysicalPresence(void) {
+  return Send(tpm_ppassert_cmd.buffer);
 }
 
 uint32_t TlclLockPhysicalPresence(void) {
-  uint8_t response[TPM_LARGE_ENOUGH_COMMAND_SIZE];
-  SendReceive(tpm_pplock_cmd.buffer, response, sizeof(response));
-  return TpmReturnCode(response);
+  return Send(tpm_pplock_cmd.buffer);
 }
 
-void TlclSetNvLocked(void) {
-  TlclDefineSpace(TPM_NV_INDEX_LOCK, 0, 0);
+uint32_t TlclSetNvLocked(void) {
+  return TlclDefineSpace(TPM_NV_INDEX_LOCK, 0, 0);
 }
 
 int TlclIsOwned(void) {
@@ -330,31 +321,20 @@ int TlclIsOwned(void) {
   return (result != TPM_SUCCESS);
 }
 
-void TlclForceClear(void) {
-  uint8_t response[TPM_LARGE_ENOUGH_COMMAND_SIZE];
-  uint32_t result;
-  SendReceive(tpm_forceclear_cmd.buffer, response, sizeof(response));
-  result = TpmReturnCode(response);
-  if (result != TPM_SUCCESS) {
-    warning("ForceClear failed with code %d (0x%x)\n", result, result);
-  }
+uint32_t TlclForceClear(void) {
+  return Send(tpm_forceclear_cmd.buffer);
 }
 
-void TlclSetEnable(void) {
-  Send(tpm_physicalenable_cmd.buffer);
+uint32_t TlclSetEnable(void) {
+  return Send(tpm_physicalenable_cmd.buffer);
 }
 
-int TlclSetDeactivated(uint8_t flag) {
-  uint8_t response[TPM_LARGE_ENOUGH_COMMAND_SIZE];
-  uint32_t result;
+uint32_t TlclSetDeactivated(uint8_t flag) {
   *((uint8_t*)tpm_physicalsetdeactivated_cmd.deactivated) = flag;
-  SendReceive(tpm_physicalsetdeactivated_cmd.buffer,
-              response, sizeof(response));
-  result = TpmReturnCode(response);
-  return result;
+  return Send(tpm_physicalsetdeactivated_cmd.buffer);
 }
 
-int TlclGetFlags(uint8_t* disable, uint8_t* deactivated) {
+uint32_t TlclGetFlags(uint8_t* disable, uint8_t* deactivated) {
   uint8_t response[TPM_LARGE_ENOUGH_COMMAND_SIZE];
   TPM_PERMANENT_FLAGS* pflags;
   uint32_t result;
