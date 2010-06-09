@@ -61,5 +61,6 @@ const int kTpmRequestHeaderLength = 10;
 const int kTpmResponseHeaderLength = 10;
 const int kTpmReadInfoLength = 12;
 const int kEncAuthLength = 20;
+const int kPcrDigestLength = 20;
 
 #endif  /* TPM_LITE_TLCL_INTERNAL_H_ */

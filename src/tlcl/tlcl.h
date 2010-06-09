@@ -74,10 +74,19 @@ uint32_t TlclStartup(void);
  */
 uint32_t TlclSelftestfull(void);
 
+/* Runs the self test in the background.
+ */
+uint32_t TlclContinueSelfTest(void);
+
 /* Defines a space with permission [perm].  [index] is the index for the space,
  * [size] the usable data size.  The TPM error code is returned.
  */
 uint32_t TlclDefineSpace(uint32_t index, uint32_t perm, uint32_t size);
+
+/* Defines a space with permission [perm].  [index] is the index for the space,
+ * [size] the usable data size.  Returns the TPM error code.
+ */
+uint32_t TlclDefineSpaceResult(uint32_t index, uint32_t perm, uint32_t size);
 
 /* Writes [length] bytes of [data] to space at [index].  The TPM error code is
  * returned.
@@ -135,5 +144,9 @@ uint32_t TlclGetFlags(uint8_t* disable, uint8_t* deactivated);
  * code is returned.
  */
 uint32_t TlclSetGlobalLock(void);
+
+/* Performs a TPM_Extend.
+ */
+uint32_t TlclExtend(int pcr_num, uint8_t* in_digest, uint8_t* out_digest);
 
 #endif  /* TPM_LITE_TLCL_H_ */

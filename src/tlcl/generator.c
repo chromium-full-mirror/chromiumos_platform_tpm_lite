@@ -207,6 +207,13 @@ Command* BuildSelftestfullCommand(void) {
   return cmd;
 }
 
+Command* BuildContinueSelfTestCommand(void) {
+  int size = kTpmRequestHeaderLength;
+  Command* cmd = newCommand(TPM_ORD_ContinueSelfTest, size);
+  cmd->name = "tpm_continueselftest_cmd";
+  return cmd;
+}
+
 Command* BuildReadPubekCommand(void) {
   int size = kTpmRequestHeaderLength + sizeof(TPM_NONCE);
   Command* cmd = newCommand(TPM_ORD_ReadPubek, size);
@@ -233,6 +240,15 @@ Command* BuildPhysicalSetDeactivatedCommand(void) {
   Command* cmd = newCommand(TPM_ORD_PhysicalSetDeactivated, size);
   cmd->name = "tpm_physicalsetdeactivated_cmd";
   AddVisibleField(cmd, "deactivated", kTpmRequestHeaderLength);
+  return cmd;  
+}
+
+Command* BuildExtendCommand(void) {
+  int size = kTpmRequestHeaderLength + sizeof(uint32_t) + kPcrDigestLength;
+  Command* cmd = newCommand(TPM_ORD_Extend, size);
+  cmd->name = "tpm_extend_cmd";
+  AddVisibleField(cmd, "pcrNum", kTpmRequestHeaderLength);
+  AddVisibleField(cmd, "inDigest", kTpmRequestHeaderLength + sizeof(uint32_t));
   return cmd;  
 }
 
@@ -358,11 +374,13 @@ Command* (*builders[])(void) = {
   BuildPPLockCommand,
   BuildStartupCommand,
   BuildSelftestfullCommand,
+  BuildContinueSelfTestCommand,
   BuildReadPubekCommand,
   BuildForceClearCommand,
   BuildPhysicalEnableCommand,
   BuildPhysicalSetDeactivatedCommand,
   BuildGetCapabilityCommand,
+  BuildExtendCommand,
 };
 
 static void FreeFields(Field* fld) {

@@ -4,6 +4,8 @@
 
 LIBTLCL = ../tlcl/libtlcl.a
 
+USE_TPM_EMULATOR ?= 0
+
 ifeq ($(USE_TPM_EMULATOR),1)
 ifeq ($(LOCAL_COMPILATION),1)
 LIBTPM = ../../../../third_party/tpm-emulator/build/tpm/libtpm.a
@@ -20,14 +22,18 @@ endif
 LIBS = $(LIBTLCL) $(LIBTPMEMU) $(LIBTPM) $(LIBCRYPTO) $(LIBGMP)
 
 CC ?= cc
-CFLAGS += -Werror -Wall
+CFLAGS += -Werror -Wall -DUSE_TPM_EMULATOR=$(USE_TPM_EMULATOR)
 #CFLAGS += -pedantic -ansi
 
 TESTS = tpmtest_clear \
+        tpmtest_earlyextend \
+        tpmtest_earlynvram \
+        tpmtest_earlynvram2 \
 	tpmtest_enable \
 	tpmtest_globallock \
         tpmtest_lock \
         tpmtest_readonly \
+        tpmtest_redefine \
         tpmtest_writelimit \
 
 all: $(TESTS)
