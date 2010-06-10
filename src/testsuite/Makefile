@@ -34,6 +34,7 @@ TESTS = tpmtest_clear \
         tpmtest_lock \
         tpmtest_readonly \
         tpmtest_redefine \
+        tpmtest_spaceperm \
         tpmtest_writelimit \
 
 all: $(TESTS)

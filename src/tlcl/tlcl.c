@@ -350,7 +350,7 @@ uint32_t TlclGetFlags(uint8_t* disable, uint8_t* deactivated) {
   uint32_t result;
   uint32_t size;
 
-  SendReceive(tpm_getcapability_cmd.buffer, response, sizeof(response));
+  SendReceive(tpm_getflags_cmd.buffer, response, sizeof(response));
   result = TpmReturnCode(response);
   if (result != TPM_SUCCESS) {
     return result;
@@ -376,4 +376,21 @@ uint32_t TlclExtend(int pcr_num, uint8_t* in_digest, uint8_t* out_digest) {
   SendReceive(tpm_extend_cmd.buffer, response, sizeof(response));
   memcpy(out_digest, response + kTpmResponseHeaderLength, kPcrDigestLength);
   return TpmReturnCode(response);
+}
+
+uint32_t TlclGetPermissions(uint32_t index, uint32_t* permissions) {
+  uint8_t response[TPM_LARGE_ENOUGH_COMMAND_SIZE];
+  uint8_t* nvdata;
+  uint32_t result;
+  uint32_t size;
+
+  ToTpmUint32(tpm_getpermissions_cmd.index, index);
+  SendReceive(tpm_getpermissions_cmd.buffer, response, sizeof(response));
+  result = TpmReturnCode(response);
+  if (result != TPM_SUCCESS) {
+    return result;
+  }
+  nvdata = response + kTpmResponseHeaderLength + sizeof(size);
+  FromTpmUint32(nvdata + kNvDataPublicPermissionsOffset, permissions);
+  return result;
 }

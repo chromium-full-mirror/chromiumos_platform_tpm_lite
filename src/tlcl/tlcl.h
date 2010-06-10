@@ -149,4 +149,8 @@ uint32_t TlclSetGlobalLock(void);
  */
 uint32_t TlclExtend(int pcr_num, uint8_t* in_digest, uint8_t* out_digest);
 
+/* Gets the permission bits for the NVRAM space with |index|.
+ */
+uint32_t TlclGetPermissions(uint32_t index, uint32_t* permissions);
+
 #endif  /* TPM_LITE_TLCL_H_ */
