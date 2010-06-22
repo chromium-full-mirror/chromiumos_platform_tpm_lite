@@ -30,6 +30,7 @@ TESTS = tpmtest_clear \
         tpmtest_earlynvram \
         tpmtest_earlynvram2 \
 	tpmtest_enable \
+	tpmtest_fastenable \
 	tpmtest_globallock \
         tpmtest_lock \
         tpmtest_readonly \
