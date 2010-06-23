@@ -25,15 +25,15 @@
 #include <unistd.h>
 
 #ifdef FIRMWARE
-#include "saved-structures.h"
 #include "tss_constants.h"
 #else
 #include <tss/tcs.h>
-#include "structures.h"
 #include "tpmextras.h"
 #endif  /* FIRMWARE */
 
+#include "structures.h"
 #include "tlcl_internal.h"
+#include "version.h"
 
 #if USE_TPM_EMULATOR
 #include "tpmemu.h"

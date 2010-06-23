@@ -9,7 +9,7 @@ all: firmware
 
 .PHONY: firmware
 
-firmware: tlcl.c tlcl_internal.h tlcl.h saved-structures.h
+firmware: tlcl.c tlcl_internal.h tlcl.h structures.h
 	$(CC) -Wall -Werror -ansi -DFIRMWARE -c tlcl.c
 
 clean:
