@@ -28,7 +28,7 @@ update-structures: generator
 		  cp structures.tmp structures.h )
 
 update-version:
-	find \( -name '*.[ch]' -o -name 'Makefile*' \) -a \! -name version.h \
+	find \( -name '*.[ch]' -o -name 'Makefile' \) -a \! -name version.h \
 		| sort | xargs cat | md5sum | cut -c 25-32 > x.tmp
 	echo "char* TlclVersion = \"TLCLv=$$(cat x.tmp)\";" > version.tmp
 	cmp -s version.tmp version.h || \
