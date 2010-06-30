@@ -339,6 +339,10 @@ uint32_t TlclSetEnable(void) {
   return Send(tpm_physicalenable_cmd.buffer);
 }
 
+uint32_t TlclClearEnable(void) {
+  return Send(tpm_physicaldisable_cmd.buffer);
+}
+
 uint32_t TlclSetDeactivated(uint8_t flag) {
   *((uint8_t*)tpm_physicalsetdeactivated_cmd.deactivated) = flag;
   return Send(tpm_physicalsetdeactivated_cmd.buffer);

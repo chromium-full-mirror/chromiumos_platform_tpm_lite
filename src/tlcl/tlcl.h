@@ -127,9 +127,13 @@ int TlclIsOwned(void);
  */
 uint32_t TlclForceClear(void);
 
-/* Issues a SetEnable.  The TPM error code is returned.
+/* Issues a PhysicalEnable.  The TPM error code is returned.
  */
 uint32_t TlclSetEnable(void);
+
+/* Issues a PhysicalDisable.  The TPM error code is returned.
+ */
+uint32_t TlclClearEnable(void);
 
 /* Issues a SetDeactivated.  Pass 0 to activate.  Returns result code.
  */

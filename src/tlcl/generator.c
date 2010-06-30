@@ -218,21 +218,28 @@ Command* BuildReadPubekCommand(void) {
   int size = kTpmRequestHeaderLength + sizeof(TPM_NONCE);
   Command* cmd = newCommand(TPM_ORD_ReadPubek, size);
   cmd->name = "tpm_readpubek_cmd";
-  return cmd;  
+  return cmd;
 }
 
 Command* BuildForceClearCommand(void) {
   int size = kTpmRequestHeaderLength;
   Command* cmd = newCommand(TPM_ORD_ForceClear, size);
   cmd->name = "tpm_forceclear_cmd";
-  return cmd;  
+  return cmd;
 }
 
 Command* BuildPhysicalEnableCommand(void) {
   int size = kTpmRequestHeaderLength;
   Command* cmd = newCommand(TPM_ORD_PhysicalEnable, size);
   cmd->name = "tpm_physicalenable_cmd";
-  return cmd;  
+  return cmd;
+}
+
+Command* BuildPhysicalDisableCommand(void) {
+  int size = kTpmRequestHeaderLength;
+  Command* cmd = newCommand(TPM_ORD_PhysicalDisable, size);
+  cmd->name = "tpm_physicaldisable_cmd";
+  return cmd;
 }
 
 Command* BuildPhysicalSetDeactivatedCommand(void) {
@@ -240,7 +247,7 @@ Command* BuildPhysicalSetDeactivatedCommand(void) {
   Command* cmd = newCommand(TPM_ORD_PhysicalSetDeactivated, size);
   cmd->name = "tpm_physicalsetdeactivated_cmd";
   AddVisibleField(cmd, "deactivated", kTpmRequestHeaderLength);
-  return cmd;  
+  return cmd;
 }
 
 Command* BuildExtendCommand(void) {
@@ -249,7 +256,7 @@ Command* BuildExtendCommand(void) {
   cmd->name = "tpm_extend_cmd";
   AddVisibleField(cmd, "pcrNum", kTpmRequestHeaderLength);
   AddVisibleField(cmd, "inDigest", kTpmRequestHeaderLength + sizeof(uint32_t));
-  return cmd;  
+  return cmd;
 }
 
 Command* BuildGetFlagsCommand(void) {
@@ -257,7 +264,7 @@ Command* BuildGetFlagsCommand(void) {
               sizeof(TPM_CAPABILITY_AREA) +   /* capArea */
               sizeof(uint32_t) +              /* subCapSize */
               sizeof(uint32_t));              /* subCap */
-    
+
   Command* cmd = newCommand(TPM_ORD_GetCapability, size);
   cmd->name = "tpm_getflags_cmd";
   AddInitializedField(cmd, kTpmRequestHeaderLength,
@@ -268,7 +275,7 @@ Command* BuildGetFlagsCommand(void) {
   AddInitializedField(cmd, kTpmRequestHeaderLength +
                       sizeof(TPM_CAPABILITY_AREA) + sizeof(uint32_t),
                       sizeof(uint32_t), TPM_CAP_FLAG_PERMANENT);
-  return cmd;  
+  return cmd;
 }
 
 Command* BuildGetPermissionsCommand(void) {
@@ -276,7 +283,7 @@ Command* BuildGetPermissionsCommand(void) {
               sizeof(TPM_CAPABILITY_AREA) +   /* capArea */
               sizeof(uint32_t) +              /* subCapSize */
               sizeof(uint32_t));              /* subCap */
-    
+
   Command* cmd = newCommand(TPM_ORD_GetCapability, size);
   cmd->name = "tpm_getpermissions_cmd";
   AddInitializedField(cmd, kTpmRequestHeaderLength,
@@ -286,7 +293,7 @@ Command* BuildGetPermissionsCommand(void) {
                       sizeof(uint32_t), sizeof(uint32_t));
   AddVisibleField(cmd, "index", kTpmRequestHeaderLength +
                   sizeof(TPM_CAPABILITY_AREA) + sizeof(uint32_t));
-  return cmd;  
+  return cmd;
 }
 
 /* Output the fields of a structure.
@@ -336,8 +343,8 @@ int OutputBytes_(Command* cmd, Field* fld) {
       break;
     case 4:
       printf("0x%x, 0x%x, 0x%x, 0x%x, ", fld->value >> 24,
-             (fld->value >> 16) & 0xff, 
-             (fld->value >> 8) & 0xff, 
+             (fld->value >> 16) & 0xff,
+             (fld->value >> 8) & 0xff,
              fld->value & 0xff);
       cursor += 4;
       break;
@@ -395,6 +402,7 @@ Command* (*builders[])(void) = {
   BuildContinueSelfTestCommand,
   BuildReadPubekCommand,
   BuildForceClearCommand,
+  BuildPhysicalDisableCommand,
   BuildPhysicalEnableCommand,
   BuildPhysicalSetDeactivatedCommand,
   BuildGetFlagsCommand,
