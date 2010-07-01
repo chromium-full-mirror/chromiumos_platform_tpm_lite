@@ -39,6 +39,8 @@
 #include "tpmemu.h"
 #endif
 
+#define TPM_DEVICE_PATH "/dev/tpm0"
+
 /* The file descriptor for the TPM device.
  */
 int tpm_fd = -1;
@@ -231,13 +233,24 @@ void TlclLibInit(void) {
 #if USE_TPM_EMULATOR
   tpmemu_init();
 #else
+  TlclOpenDevice();
+#endif  /* USE_TPM_EMULATOR */
+}
+
+void TlclCloseDevice(void) {
 #if !FIRMWARE
-  tpm_fd = open("/dev/tpm0", O_RDWR);
+  close(tpm_fd);
+  tpm_fd = -1;
+#endif  /* !FIRMWARE */
+}
+
+void TlclOpenDevice(void) {
+#if !FIRMWARE
+  tpm_fd = open(TPM_DEVICE_PATH, O_RDWR);
   if (tpm_fd < 0) {
-    error("cannot open TPM device: %s\n", strerror(errno));
+    error("cannot open TPM device %s: %s\n", TPM_DEVICE_PATH, strerror(errno));
   }
 #endif  /* !FIRMWARE */
-#endif  /* USE_TPM_EMULATOR */
 }
 
 uint32_t TlclStartup(void) {

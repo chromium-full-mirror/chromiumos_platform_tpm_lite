@@ -55,6 +55,13 @@ static void warning(const char *format, ...) {
  */
 void TlclLibInit(void);
 
+/* Close and open the device.  This is needed for running more complex commands
+ * at user level, such as TPM_TakeOwnership, since the TPM device can be opened
+ * only by one process at a time.
+ */
+void TlclCloseDevice(void);
+void TlclOpenDevice(void);
+
 /* Logs to stdout.  Arguments like printf.
  */
 void TlclLog(char* format, ...);
